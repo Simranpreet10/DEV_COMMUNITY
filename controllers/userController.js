@@ -1,21 +1,22 @@
 const User = require("../models/userModel");
 const jwt = require("jsonwebtoken");
-
-const generateToken = (user)=>{
-    return jwt.sign({user},process.env.JWT_SECRET);
-}
+const bcrypt = require("bcrypt");
 
 const registerUser = async (req,res)=>{
     const {firstName,lastName,emailId,password} = req.body;
 
     if(!firstName || !emailId || !password){
-        res.status(400).send({message:"Please add all mandatory fields"});
+        return res.status(400).send({message:"Please add all mandatory fields"});
     }
 
+    try{
     const userExists = await User.findOne({emailId});
     if(userExists){
-        res.status(400).json({message:"Already Exist"});
+        return res.status(400).json({message:"Already Exist"});
     }
+
+    // const hashedpassword = await bcrypt.hash(password,10);
+
 
     const newUser = await User.create({
         firstName,
@@ -30,7 +31,10 @@ const registerUser = async (req,res)=>{
     res.status(201).json({
         message:"User added successfully",
         token   
-    });
+    });}
+    catch(err){
+        res.status(500);
+    }
 }
 
 const loginUser = async (req,res)=>{
@@ -40,7 +44,8 @@ const loginUser = async (req,res)=>{
         return res.status(400).json({message:"All all details"});
     }
 
-    const userExists = await User.findOne({email});
+    try{
+    const userExists = await User.findOne({emailId});
     if(!userExists){
         return res.status(400).json({message:"No user found"});
     }
@@ -51,7 +56,10 @@ const loginUser = async (req,res)=>{
 
     const token = generateToken(userExists);
 
-    return res.send(200).json({message:"LoggedIn",token});
+    return res.send(200).json({message:"LoggedIn",token});}
+    catch(err){
+        res.status(500);
+    }
 }
 
 
